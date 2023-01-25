@@ -4,4 +4,6 @@
 def index_range(page : int, page_size : int) ->tuple[int, int]:
     '''This function returns the first and last index of a page
     '''
-    return (page * page_size, (page + 1) * page_size)
+    start_index = (page - 1) * page_size
+    end_index = start_index + page_size
+    return(start_index, end_index)
