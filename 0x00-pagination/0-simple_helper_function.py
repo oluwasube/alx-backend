@@ -1,7 +1,10 @@
 #!/usr/bin/env python3
 '''This module provides pagination functionality
 '''
-def index_range(page : int, page_size : int) ->tuple[int, int]:
+from typing import Tuple
+
+
+def index_range(page: int, page_size: int) ->Tuple[int, int]:
     '''This function returns the first and last index of a page
     '''
     start_index = (page - 1) * page_size
