@@ -2,18 +2,14 @@
 """
 Flask app
 """
-from flask import (
-    Flask,
-    render_template,
-    request,
-    g
-)
+import locale
+from flask import Flask, render_template, request, g
 from flask_babel import Babel
-from typing import (
-    Dict,
-    Union
-)
-
+from datetime import timezone as tmzn
+from datetime import datetime
+from pytz import timezone
+import pytz.exceptions
+from typing import Dict,Union
 
 class Config(object):
     """
@@ -36,7 +32,6 @@ users = {
     4: {"name": "Teletubby", "locale": None, "timezone": "Europe/London"},
 }
 
-
 def get_user() -> Union[Dict, None]:
     """
     Returns a user dictionary or None if ID value can't be found
@@ -53,6 +48,11 @@ def before_request():
     """
     user = get_user()
     g.user = user
+    time_now = pytz.utc.localize(datetime.utcnow())
+    time = time_now.astimezone(timezone(get_timezone()))
+    locale.setlocale(locale.LC_TIME, (get_locale(), 'UTF-8'))
+    fmt = "%b %d, %Y %I:%M:%S %p"
+    g.time = time.strftime(fmt)
 
 
 @babel.localeselector
@@ -68,12 +68,33 @@ def get_locale():
     return request.accept_languages.best_match(supported_languages)
 
 
+@babel.timezoneselector
+def get_timezone():
+    """
+    Select and return appropriate timezone
+    """
+    tzone = request.args.get('timezone', None)
+    if tzone:
+        try:
+            return timezone(tzone).zone
+        except pytz.exceptions.UnknownTimeZoneError:
+            pass
+    if g.user:
+        try:
+            tzone = g.user.get('timezone')
+            return timezone(tzone).zone
+        except pytz.exceptions.UnknownTimeZoneError:
+            pass
+    dflt = app.config['BABEL_DEFAULT_TIMEZONE']
+    return dflt
+
+
 @app.route('/', strict_slashes=False)
-def home_index() -> str:
+def index() -> str:
     """
     Handles / route
     """
-    return render_template('6-index.html')
+    return render_template('5-index.html')
 
 
 if __name__ == "__main__":
