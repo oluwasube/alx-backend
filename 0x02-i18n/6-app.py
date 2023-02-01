@@ -1,16 +1,18 @@
 #!/usr/bin/env python3
-"""A Basic Flask app.
 """
-
-from flask import Flask, render_template, request, g
+Flask app
+"""
+from flask import (
+    Flask,
+    render_template,
+    request,
+    g
+)
 from flask_babel import Babel
-
-users = {
-    1: {"name": "Balou", "locale": "fr", "timezone": "Europe/Paris"},
-    2: {"name": "Beyonce", "locale": "en", "timezone": "US/Central"},
-    3: {"name": "Spock", "locale": "kg", "timezone": "Vulcan"},
-    4: {"name": "Teletubby", "locale": None, "timezone": "Europe/London"},
-}
+from typing import (
+    Dict,
+    Union
+)
 
 
 class Config(object):
@@ -27,15 +29,21 @@ app.config.from_object(Config)
 babel = Babel(app)
 
 
-def get_user():
+users = {
+    1: {"name": "Balou", "locale": "fr", "timezone": "Europe/Paris"},
+    2: {"name": "Beyonce", "locale": "en", "timezone": "US/Central"},
+    3: {"name": "Spock", "locale": "kg", "timezone": "Vulcan"},
+    4: {"name": "Teletubby", "locale": None, "timezone": "Europe/London"},
+}
+
+
+def get_user() -> Union[Dict, None]:
     """
     Returns a user dictionary or None if ID value can't be found
     or if 'login_as' URL parameter was not found
     """
-    id = request.args.get('login_as', None)
-    if id is not None and int(id) in users.keys():
-        return users.get(int(id))
-    return None
+    user_id = request.args.get('login_as')
+    return users.get(int(user_id)) if user_id else None
 
 
 @app.before_request
@@ -52,10 +60,12 @@ def get_locale():
     """
     Select and return best language match based on supported languages
     """
-    locale = request.args.get('locale')
-    if locale in app.config['LANGUAGES']:
-        return locale
-    return request.accept_languages.best_match(app.config['LANGUAGES'])
+    supported_languages = app.config['LANGUAGES']
+    preferred_locales = [request.args.get('locale'), g.user.get('locale'), request.headers.get('locale')]
+    for locale in preferred_locales:
+        if locale in supported_languages:
+            return locale
+    return request.accept_languages.best_match(supported_languages)
 
 
 @app.route('/', strict_slashes=False)
